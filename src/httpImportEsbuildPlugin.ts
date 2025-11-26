@@ -19,6 +19,9 @@ export function httpImportEsbuildPlugin(params?: HttpImportEsbuildPluginParams):
   const timeoutMs = params?.timeoutMs ?? 30_000;
   const loaderResolver = params?.loaderResolver;
 
+  // Keep a map of resolved paths in case modules redirect
+  const pathToResolvedUrl = new Map<string, string>();
+
   return {
     name: 'http-import',
     setup(build) {
@@ -29,10 +32,13 @@ export function httpImportEsbuildPlugin(params?: HttpImportEsbuildPluginParams):
       }));
 
       // Relative import inside an http(s) module
-      build.onResolve({ filter: /.*/, namespace }, args => ({
-        path: new URL(args.path, args.importer).toString(),
-        namespace,
-      }));
+      build.onResolve({ filter: /.*/, namespace }, args => {
+        const base = pathToResolvedUrl.get(args.importer) ?? args.importer;
+        return ({
+          path: new URL(args.path, base).toString(),
+          namespace,
+        });
+      });
 
       build.onLoad({ filter: /.*/, namespace }, async (args) => {
         params?.onLog?.(`Downloading: ${args.path}`);
@@ -51,6 +57,9 @@ export function httpImportEsbuildPlugin(params?: HttpImportEsbuildPluginParams):
         if (!res.ok) {
           throw new Error(`GET ${args.path} failed: status ${res.status}`);
         }
+
+        const resolvedUrl = res.url || args.path; // res.url is empty string in tests
+        pathToResolvedUrl.set(args.path, resolvedUrl);
 
         const contents = new Uint8Array(await res.arrayBuffer());
 
