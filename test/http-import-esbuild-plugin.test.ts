@@ -68,6 +68,45 @@ console.log(a);
     assert.match(outputText, /a\s*=\s*1/);
 });
 
+test("leaves bare imports inside http modules untouched", async () => {
+    const calls: string[] = [];
+
+    setFetchMock(async (info) => {
+        const url = String(info);
+        calls.push(url);
+
+        if (url === "https://example.com/a.js") {
+            // This module has a *bare* import, which should NOT be rewritten
+            return makeResponse(`
+import React from "react";
+
+export function useSomething() {
+  return React;
+}
+`);
+        }
+
+        // If the plugin ever tries to treat the bare "react" import
+        // as an HTTP URL (e.g. https://example.com/react), we'll hit this:
+        throw new Error("unexpected url " + url);
+    });
+
+    await assert.rejects(
+      () => runBuild(`\
+import { useSomething } from "https://example.com/a.js";
+console.log(useSomething);
+`),
+      // We don't really care about the specific error here; esbuild
+      // will complain it can't resolve "react", which is *expected*.
+      () => true,
+    );
+
+    // The key assertion: only the top-level URL was ever fetched.
+    assert.deepEqual(calls, [
+        "https://example.com/a.js",
+    ]);
+});
+
 test("resolves relative imports inside http namespace", async () => {
     const calls: string[] = [];
     setFetchMock(async (info) => {

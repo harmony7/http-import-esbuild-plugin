@@ -32,7 +32,7 @@ export function httpImportEsbuildPlugin(params?: HttpImportEsbuildPluginParams):
       }));
 
       // Relative import inside an http(s) module
-      build.onResolve({ filter: /.*/, namespace }, args => {
+      build.onResolve({ filter: /^\.\.?\//, namespace }, args => {
         const base = pathToResolvedUrl.get(args.importer) ?? args.importer;
         return ({
           path: new URL(args.path, base).toString(),

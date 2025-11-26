@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+### Fixed
+
+- leaves bare imports inside http modules untouched
+
 ## [0.1.2] - 2025-11-26
 
 ### Fixed
