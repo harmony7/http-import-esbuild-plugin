@@ -1,7 +1,7 @@
 {
   "name": "@h7/http-import-esbuild-plugin",
   "type": "module",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "An esbuild plugin that resolves imports from http URLs",
   "contributors": [
     {
